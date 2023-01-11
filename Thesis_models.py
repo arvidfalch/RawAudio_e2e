@@ -10,29 +10,48 @@ from Layers import Conv1D_local, Dense_local, SAAF, Conv1D_tied, Slice
 
 
 def Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=False, 
-            output_dim=64, CRNN_output=False):
+            output_dim=64, CRNN_output=False, sr=int):
     # CRNN_output adds channel dimension to the output (1 channel, data_format=channel last) 
     # for use in any Conv2D model
-    x = Input(shape=(batchsize_, win_length, 1), name='input')
+    x = Input(shape=(batchsize_, win_length,1), name='input')
 
-    
-    conv = Conv1D(filters, kernel_size_1, strides=1, padding='same',
-                       kernel_initializer='lecun_uniform', input_shape=(win_length, 1))
-    
-    activation_abs = Activation(K.abs, name='conv_activation') 
-    # Original CAFx model uses softplus activation function
-    activation_sp = tf.keras.layers.ReLU()
-    max_pooling = MaxPooling1D(pool_size=win_length//output_dim, data_format='channels_last')
+    if melspec is False:
+        conv = Conv1D(filters, kernel_size_1, strides=1, padding='same',
+                        kernel_initializer='lecun_uniform', input_shape=(win_length, 1))
+        
+        activation_abs = Activation(K.abs, name='conv_activation') 
+        # Original CAFx model uses softplus activation function
+        activation_sp = tf.keras.layers.ReLU()
+        max_pooling = MaxPooling1D(pool_size=win_length//output_dim, data_format='channels_last')
 
-    conv_smoothing = Conv1D_local(filters, kernel_size_1*2, strides=1, padding='same',
-                                  kernel_initializer='lecun_uniform')
+        conv_smoothing = Conv1D_local(filters, kernel_size_1*2, strides=1, padding='same',
+                                    kernel_initializer='lecun_uniform')
+        
+        
+        X = TimeDistributed(conv, name='conv')(x)
+        X_abs = TimeDistributed(activation_abs, name='conv_activation')(X)
+        M = TimeDistributed(conv_smoothing, name='conv_smoothing')(X_abs)
+        M = TimeDistributed(activation_sp, name='conv_smoothing_activation')(M)
+        frontend_output = TimeDistributed(max_pooling, name='max_pooling')(M)
+    
+    elif melspec is True:
+        
+        X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.squeeze(x, [-1])))(x)
+        X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.pad(x, ([0,0],[int(256//2),int(256//2)]))))(X)
+        X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.signal.stft(x, frame_length=256, frame_step=65,fft_length=256)))(X)
+        X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.cast(tf.math.abs(x),dtype=tf.float32)))(X)
+        filterbank = tf.signal.linear_to_mel_weight_matrix(
+            num_mel_bins=128,
+            num_spectrogram_bins=256 // 2 + 1,
+            sample_rate=24000,
+            lower_edge_hertz=0,
+            upper_edge_hertz=sr//2)
+        X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.linalg.matmul(x,
+                                     filterbank)))(X)
+        frontend_output = TimeDistributed(tf.keras.layers.Lambda(lambda x: 10*tf.cast(tf.experimental.numpy.log10(tf.keras.backend.clip(x**2,1e-10,None)),dtype=tf.float32)))(X)
     
     
-    X = TimeDistributed(conv, name='conv')(x)
-    X_abs = TimeDistributed(activation_abs, name='conv_activation')(X)
-    M = TimeDistributed(conv_smoothing, name='conv_smoothing')(X_abs)
-    M = TimeDistributed(activation_sp, name='conv_smoothing_activation')(M)
-    frontend_output = TimeDistributed(max_pooling, name='max_pooling')(M)
+    
     if CRNN_output is True:
         frontend_output = frontend_output[..., tf.newaxis]
     else:
@@ -46,9 +65,9 @@ def Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=False,
 
 def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes, 
             melspec=False, output_dim=64, frame_level_classification=False, dense_units=32,
-            activation='tanh'):
+            activation='tanh', sr=24000):
    
-    frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim)
+    frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim, sr=sr)
 
     bi_rnn = Bidirectional(LSTM(filters//2, activation=activation, stateful=False,
                                  return_sequences=True, dropout=0.1,
@@ -97,7 +116,7 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
 
 
 def CRNN(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.1, output_dim=64, melspec=False):
+        batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.1, output_dim=64, melspec=False, sr=24000):
 # Original code from https://github.com/sharathadavanne/sed-crnn/blob/master/sed.py
 
     frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim, CRNN_output=True)
