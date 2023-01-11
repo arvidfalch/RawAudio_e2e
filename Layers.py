@@ -11,12 +11,96 @@ from keras import activations, initializers, regularizers, constraints
 
 import numpy as np
 
+
+# Code LogMelSpectrogram from https://towardsdatascience.com/how-to-easily-process-audio-on-your-gpu-with-tensorflow-2d9d91360f06
+
+class LogMelSpectrogram(tf.keras.layers.Layer):
+    """Compute log-magnitude mel-scaled spectrograms."""
+
+    def __init__(self, sample_rate, fft_size, hop_size, n_mels,
+                 f_min=0.0, f_max=None, **kwargs):
+        super(LogMelSpectrogram, self).__init__(**kwargs)
+        self.sample_rate = sample_rate
+        self.fft_size = fft_size
+        self.hop_size = hop_size
+        self.n_mels = n_mels
+        self.f_min = f_min
+        self.f_max = f_max if f_max else sample_rate / 2
+        self.mel_filterbank = tf.signal.linear_to_mel_weight_matrix(
+            num_mel_bins=self.n_mels,
+            num_spectrogram_bins=fft_size // 2 + 1,
+            sample_rate=self.sample_rate,
+            lower_edge_hertz=self.f_min,
+            upper_edge_hertz=self.f_max)
+
+    def build(self, input_shape):
+        self.non_trainable_weights.append(self.mel_filterbank)
+        super(LogMelSpectrogram, self).build(input_shape)
+
+    def call(self, waveforms):
+        """Forward pass.
+        Parameters
+        ----------
+        waveforms : tf.Tensor, shape = (None, n_samples)
+            A Batch of mono waveforms.
+        Returns
+        -------
+        log_mel_spectrograms : (tf.Tensor), shape = (None, time, freq, ch)
+            The corresponding batch of log-mel-spectrograms
+        """
+        def _tf_log10(x):
+            numerator = tf.math.log(x)
+            denominator = tf.math.log(tf.constant(10, dtype=numerator.dtype))
+            return numerator / denominator
+
+        def power_to_db(magnitude, amin=1e-16, top_db=80.0):
+            """
+            https://librosa.github.io/librosa/generated/librosa.core.power_to_db.html
+            """
+            ref_value = tf.reduce_max(magnitude)
+            log_spec = 10.0 * _tf_log10(tf.maximum(amin, magnitude))
+            log_spec -= 10.0 * _tf_log10(tf.maximum(amin, ref_value))
+            log_spec = tf.maximum(log_spec, tf.reduce_max(log_spec) - top_db)
+
+            return log_spec
+
+        spectrograms = tf.signal.stft(waveforms,
+                                      frame_length=self.fft_size,
+                                      frame_step=self.hop_size,
+                                      pad_end=False)
+
+        magnitude_spectrograms = tf.abs(spectrograms)
+
+        mel_spectrograms = tf.matmul(tf.square(magnitude_spectrograms),
+                                     self.mel_filterbank)
+
+        log_mel_spectrograms = power_to_db(mel_spectrograms)
+
+        # add channel dimension
+        #log_mel_spectrograms = tf.expand_dims(log_mel_spectrograms, 3)
+
+        return log_mel_spectrograms
+
+    def get_config(self):
+        config = {
+            'fft_size': self.fft_size,
+            'hop_size': self.hop_size,
+            'n_mels': self.n_mels,
+            'sample_rate': self.sample_rate,
+            'f_min': self.f_min,
+            'f_max': self.f_max,
+        }
+        config.update(super(LogMelSpectrogram, self).get_config())
+
+        return config
+
+
 # Log mel layer
 # Code from https://gist.github.com/keunwoochoi/f4854acb68acf791a49a051893bcd23b
 
 class LogMelgramLayer(tf.keras.layers.Layer):
     def __init__(
-        self, num_fft, hop_length, num_mels, sample_rate, f_min, f_max, eps, **kwargs
+        self, num_fft, hop_length, num_mels, sample_rate, f_min, f_max, **kwargs
     ):
         super(LogMelgramLayer, self).__init__(**kwargs)
         self.num_fft = num_fft
@@ -25,7 +109,7 @@ class LogMelgramLayer(tf.keras.layers.Layer):
         self.sample_rate = sample_rate
         self.f_min = f_min
         self.f_max = f_max
-        self.eps = eps
+        
         self.num_freqs = num_fft // 2 + 1
         lin_to_mel_matrix = tf.signal.linear_to_mel_weight_matrix(
             num_mel_bins=self.num_mels,
@@ -65,7 +149,7 @@ class LogMelgramLayer(tf.keras.layers.Layer):
         melgrams = tf.tensordot(  # assuming channel_first, so (b, c, f, t)
             tf.square(mag_stfts), self.lin_to_mel_matrix, axes=[2, 0]
         )
-        log_melgrams = _tf_log10(melgrams + self.eps)
+        log_melgrams = _tf_log10(melgrams)
         return tf.expand_dims(log_melgrams, 3)
 
     def get_config(self):
@@ -76,7 +160,7 @@ class LogMelgramLayer(tf.keras.layers.Layer):
             'sample_rate': self.sample_rate,
             'f_min': self.f_min,
             'f_max': self.f_max,
-            'eps': self.eps,
+            
         }
         base_config = super(LogMelgramLayer, self).get_config()
         return dict(list(config.items()) + list(base_config.items()))
