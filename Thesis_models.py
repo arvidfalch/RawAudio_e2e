@@ -20,6 +20,7 @@ def Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=False,
                        kernel_initializer='lecun_uniform', input_shape=(win_length, 1))
     
     activation_abs = Activation(K.abs, name='conv_activation') 
+    # Original CAFx model uses softplus activation function
     activation_sp = tf.keras.layers.ReLU()
     max_pooling = MaxPooling1D(pool_size=win_length//output_dim, data_format='channels_last')
 
@@ -75,7 +76,7 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
     y = TimeDistributed(keras.layers.Dense(n_of_classes, name='Dense_layer', activation='sigmoid'))(z)
     #y = TimeDistributed(keras.layers.Softmax(name='Softmax'))(y)
 
-    model = tf.keras.Model(inputs=[frontend.input], outputs=[y], name='LSTM_RAFE')
+    model = tf.keras.Model(inputs=[frontend.input], outputs=[y], name='LSTM')
     
     initial_learning_rate = 0.001
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -128,7 +129,7 @@ def CRNN(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=frontend.input, outputs=out)
+    _model = tf.keras.Model(inputs=frontend.input, outputs=out, name='CRNN')
     _model.compile(optimizer='Adam', loss='binary_crossentropy', metrics='accuracy')
 
     return _model
