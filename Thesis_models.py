@@ -72,9 +72,9 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
     Z = TimeDistributed(bi_rnn1, name='LSTM1')(Z)
     Z = TimeDistributed(bi_rnn2, name='LSTM2')(Z)
     
-    z = TimeDistributed(keras.layers.Dense(32, activation=activation, name='Dense_Xtra'))(Z)
+    z = TimeDistributed(keras.layers.Dense(dense_units, activation=activation, name='Dense_Xtra'))(Z)
     y = TimeDistributed(keras.layers.Dense(n_of_classes, name='Dense_layer', activation='sigmoid'))(z)
-    #y = TimeDistributed(keras.layers.Softmax(name='Softmax'))(y)
+   
 
     model = tf.keras.Model(inputs=[frontend.input], outputs=[y], name='LSTM')
     
