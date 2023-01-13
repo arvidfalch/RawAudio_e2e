@@ -1,3 +1,10 @@
+### Issues
+
+* Pure strong labeled SED not done in DCASE since 2017, now it is all SELD
+* Dataset with no "other" class
+* Evaluating systems for Machine Listening is hard
+
+
 # Way forward
 ## Prelims
 Train CRNN and LSTM with both Raw Audio input and log mel spec input at ML Nodes
@@ -16,6 +23,8 @@ Train CRNN and LSTM with both Raw Audio input and log mel spec input at ML Nodes
 * Size of frontend
 * Understand Conv_1D_local layer functions
 * Timesteps and framesize
+* Make all 3 three layers in LSTM model bidirectional
+* GRU or LSTM in CRNN
 
 * Decide if class 11 ("None") is legal and decide how to negotiate this
 

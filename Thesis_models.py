@@ -49,7 +49,7 @@ def Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=False,
         X = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.linalg.matmul(x,
                                      filterbank)))(X)
         frontend_output = TimeDistributed(tf.keras.layers.Lambda(lambda x: 10*tf.cast(tf.experimental.numpy.log10(tf.keras.backend.clip(x**2,1e-10,None)),dtype=tf.float32)))(X)
-    
+        #frontend_output = TimeDistributed(tf.keras.layers.Lambda(lambda x: tf.transpose(x, [0,2,1])))(X)
     
     
     if CRNN_output is True:
@@ -119,7 +119,7 @@ def CRNN(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
         batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.1, output_dim=64, melspec=False, sr=24000):
 # Original code from https://github.com/sharathadavanne/sed-crnn/blob/master/sed.py
 
-    frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim, CRNN_output=True)
+    frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim, CRNN_output=True, sr=sr)
     
     spec_start = frontend.output
     spec_x = spec_start
