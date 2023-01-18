@@ -339,6 +339,7 @@ class Conv1D_tied(Layer):
 class Conv1D_local(Layer):
 
     # Locally-connected 1D convolutional layer. Performs one-to-one convolutions to input feature map.
+    # From the paper "Locally Connected Layers" by Yann LeCun, 2015.
         
     def __init__(self, filters,
                  kernel_size,
