@@ -5,7 +5,7 @@ import keras
 import keras.backend as K
 from keras.layers import Input, Conv1D, Conv2D, Dense, Activation, Concatenate, TimeDistributed, Lambda, Reshape, Dropout, Permute
 from keras.layers import Multiply, Add, UpSampling1D, MaxPooling1D, BatchNormalization, Bidirectional, LSTM, GRU, MaxPooling2D
-from Layers import Conv1D_local, Dense_local, SAAF, Conv1D_tied, Slice
+from Layers import Conv1D_local
 
 
 
@@ -13,6 +13,7 @@ def Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=False,
             output_dim=64, CRNN_output=False, sr=int):
     # CRNN_output adds channel dimension to the output (1 channel, data_format=channel last) 
     # for use in any Conv2D model
+    # melspec=True return log mel spectrogram as output of frontend
     x = Input(shape=(batchsize_, win_length,1), name='input')
 
     if melspec is False:
@@ -72,15 +73,15 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
     bi_rnn = Bidirectional(LSTM(filters//2, activation=activation, stateful=False,
                                  return_sequences=True, dropout=0.1,
                                  recurrent_dropout=0.1, name='BiLSTM'))
-    bi_rnn1 = LSTM(filters//2, activation=activation, stateful=False,
+    rnn1 = LSTM(filters//2, activation=activation, stateful=False,
                                  return_sequences=True, dropout=0.1,
                                  recurrent_dropout=0.1, name='LSTM_1')
     if frame_level_classification is True:
-        bi_rnn2 = LSTM(filters//2, activation=activation, stateful=False,
+        rnn2 = LSTM(filters//2, activation=activation, stateful=False,
                                  return_sequences=False, dropout=0.1,
                                  recurrent_dropout=0.1, name='LSTM_2')
     elif frame_level_classification is False:
-        bi_rnn2 = LSTM(filters//2, activation=activation, stateful=False,
+        rnn2 = LSTM(filters//2, activation=activation, stateful=False,
                                  return_sequences=True, dropout=0.1,
                                  recurrent_dropout=0.1, name='LSTM_2')
     
@@ -88,8 +89,8 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
 
 
     Z = TimeDistributed(bi_rnn, name='BiLSTM')(frontend.output)
-    Z = TimeDistributed(bi_rnn1, name='LSTM1')(Z)
-    Z = TimeDistributed(bi_rnn2, name='LSTM2')(Z)
+    Z = TimeDistributed(rnn1, name='LSTM1')(Z)
+    Z = TimeDistributed(rnn2, name='LSTM2')(Z)
     
     z = TimeDistributed(keras.layers.Dense(dense_units, activation=activation, name='Dense_Xtra'))(Z)
     y = TimeDistributed(keras.layers.Dense(n_of_classes, name='Dense_layer', activation='sigmoid'))(z)
@@ -97,22 +98,70 @@ def LSTM_backend(batchsize_, win_length, filters, kernel_size_1, n_of_classes,
 
     model = tf.keras.Model(inputs=[frontend.input], outputs=[y], name='LSTM')
     
-    initial_learning_rate = 0.001
+    '''initial_learning_rate = 0.001
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
     initial_learning_rate,
     decay_steps=1000,
     decay_rate=0.96,
-    staircase=True)
+    staircase=True)'''
 
 
     # Compile the model
-    model.compile(tf.keras.optimizers.Adam(learning_rate=lr_schedule,)
+    model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
                     , loss='binary_crossentropy', metrics='accuracy') 
 
 
     return model
 
 
+def LSTM_backend_2(batchsize_, win_length, filters, kernel_size_1, n_of_classes, 
+            melspec=False, output_dim=64, frame_level_classification=False, dense_units=32,
+            activation='tanh', sr=24000):
+   
+    frontend = Frontend(batchsize_, win_length, filters, kernel_size_1, melspec=melspec, output_dim=output_dim, sr=sr)
+
+    bi_rnn = Bidirectional(LSTM(filters//2, activation=activation, stateful=False,
+                                 return_sequences=True, dropout=0.1,
+                                 recurrent_dropout=0.1, name='BiLSTM'))
+    rnn1 = LSTM(filters//2, activation=activation, stateful=False,
+                                 return_sequences=True, dropout=0.1,
+                                 recurrent_dropout=0.1, name='LSTM_1')
+    if frame_level_classification is True:
+        rnn2 = LSTM(filters//2, activation=activation, stateful=False,
+                                 return_sequences=False, dropout=0.1,
+                                 recurrent_dropout=0.1, name='LSTM_2')
+    elif frame_level_classification is False:
+        rnn2 = LSTM(filters//2, activation=activation, stateful=False,
+                                 return_sequences=True, dropout=0.1,
+                                 recurrent_dropout=0.1, name='LSTM_2')
+    
+    
+   
+    W = tf.keras.layers.Reshape((-1, filters))(frontend.output)
+    Z = bi_rnn(W)
+    Z = rnn1(Z)
+    Z = rnn2(Z)
+    
+    z = keras.layers.Dense(dense_units, activation=activation, name='Dense_Xtra')(Z)
+    y = keras.layers.Dense(n_of_classes, name='Dense_layer', activation='sigmoid')(z)
+   
+
+    model = tf.keras.Model(inputs=[frontend.input], outputs=[y], name='LSTM')
+    
+    '''initial_learning_rate = 0.001
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+    initial_learning_rate,
+    decay_steps=1000,
+    decay_rate=0.96,
+    staircase=True)'''
+
+
+    # Compile the model
+    model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
+                    , loss='binary_crossentropy', metrics='accuracy') 
+
+
+    return model
 
 
 def CRNN(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
@@ -149,6 +198,6 @@ def CRNN(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
     _model = tf.keras.Model(inputs=frontend.input, outputs=out, name='CRNN')
-    _model.compile(optimizer='Adam', loss='binary_crossentropy', metrics='accuracy')
+    _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001), loss='binary_crossentropy', metrics='accuracy')
 
     return _model
