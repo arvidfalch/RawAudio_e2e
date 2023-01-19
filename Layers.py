@@ -1,6 +1,5 @@
 import keras
 import keras.backend as K
-from Utils import slicing
 import tensorflow as tf
 from keras import layers 
 from keras.layers import Layer 
