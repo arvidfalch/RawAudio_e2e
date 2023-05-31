@@ -96,9 +96,10 @@ for i in range(epochs_):
             print('model loaded')
         if lr_schedule is True: 
             K.set_value(_model.optimizer.learning_rate, lr_sched[i])
+            print('Learning rate: {}'.format(lr_sched[i]))
         else:
             pass
-        print('Learning rate: {}'.format(lr_sched[i]))
+        
         TRAIN = np.load('DESED{}.npz'.format(b+1), allow_pickle= True)
         dmp = TRAIN
         features, labels, label_names = dmp['arr_0'],  dmp['arr_1'],  dmp['arr_2']
