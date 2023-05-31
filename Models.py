@@ -79,7 +79,7 @@ def LOG2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN_RA')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='LOG2D')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
@@ -159,7 +159,7 @@ def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN_RA')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='RAW2D')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
@@ -235,7 +235,7 @@ def PURE1D(n_classes, _rnn_nb, _fc_nb,
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN_RA')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='PURE1D')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
@@ -313,7 +313,7 @@ def RAW2D_3_channels(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN_RA')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='RAW2D_3channelLAR')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
@@ -323,7 +323,7 @@ def RAW2D_3_channels(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
 def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
         batchsize_, win_length, dropout_rate=0.5, F_size=64, sr=24000):
     # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
-    concatenate2 = Concatenate(axis=-2)
+    
     x = Input(shape=(win_length, 1), name='input')
 
     conv = Conv1D(128, 64, strides=1, padding='same', use_bias=False, trainable = True,
@@ -335,8 +335,6 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     batch_norm_1 = BatchNormalization()
     batch_norm_2 = BatchNormalization()
     
-    dropout1 = Dropout(0.5)
-    
     activation_sp = Activation('relu')
     activation_re = Activation('relu')
     activation_re2 = Activation('relu')
@@ -345,11 +343,7 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     avg_pooling_freq = AveragePooling1D(pool_size=2, data_format='channels_first')
     max_pooling = MaxPooling1D(pool_size=F_size, data_format='channels_last')
     
-    #max_pooling2 = MaxPooling1D(pool_size=pool_size, data_format='channels_last')
     concatenate = Concatenate(axis=-1)
-    concatenate2 = Concatenate(axis=-2)
-    
-    # Learnable filters
     
     # Learnable filters
     
@@ -394,7 +388,7 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
 
     out = TimeDistributed(Dense(n_classes, activation='sigmoid'), name='Dense_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='RAW1D')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
@@ -438,7 +432,7 @@ def LOG1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     out = TimeDistributed(Dense(n_classes, activation='sigmoid'), name='Dense_out')(spec_x)
     #out = Activation('sigmoid', name='strong_out')(spec_x)
 
-    _model = tf.keras.Model(inputs=x, outputs=out, name='CRNN')
+    _model = tf.keras.Model(inputs=x, outputs=out, name='LOG1D')
     _model.compile(tf.keras.optimizers.Adam(learning_rate=0.001)
             , loss='binary_crossentropy'
             , metrics=[tf.keras.metrics.Recall(), tf.keras.metrics.Precision(thresholds=0.5)])
