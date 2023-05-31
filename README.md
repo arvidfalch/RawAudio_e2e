@@ -14,4 +14,13 @@ Training dataset can also be downloaded and constructed from DESED link, follwo 
 
 ## Training
 
+To train models, use Train.py.   
+The following arguments are used:  
+´--batchsize 10´ sets the batchsize. 10 is default.   
+´--epochs 100´ sets the number of epochs to train. Note that each epoch is split into 4 mini-epochs while training. This argument sets the number for the total epochs.   
+´--model_name testmodel´ provide a name for your model, if you want to load an existing model you must provide the correct name.   
+´--load_model 0´ 0 for False, 1 for True.  
+´--frame_size 256´ gives the analysis frame size in samples, 64 or 256.   
+´--model_type 0´ decides the type of model architecture to train. 0 = RAW2D, 1 = LOG2D, 2 = RAW1D, 3 = LOG1D, and 4 = PURE1D (which only works on analysis frame size of 256). 
+
 ## Evaluation
