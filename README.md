@@ -31,5 +31,5 @@ To train a RAW2D from scratch on analysis frame size of 256 for 100 epochs:
 ## Evaluation
 For all evaluation scripts, install the following two packages:  
 `pip install sed_eval` and `pip install psds-eval`.  
-The Eval256.ipynb is the main evaluation notebook, and can be used for all new models and all pretrained models working with analysis frame size of 256. The original pretrained models for analysis frame size of 64 was constructed using TimeDistributed wrappers, and therefore demands another evaluation script, so use the notebook Eval64.ipynb in those instances.  
+The Eval_256.ipynb is the main evaluation notebook, and can be used for all new models and all pretrained models working with analysis frame size of 256. The original pretrained models for analysis frame size of 64 was constructed using TimeDistributed wrappers, and therefore demands another evaluation script, so use the notebook Eval_64.ipynb in those instances.  
 Make sure to set the path to the evaluation set and pretrained models in the notebooks. 
