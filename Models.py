@@ -3,6 +3,11 @@ import numpy as np
 from keras.layers import Input, DepthwiseConv1D, Lambda, TimeDistributed, GRU, Conv2D, Permute, Reshape, AveragePooling1D, MaxPooling2D,Conv1D, Activation, MaxPooling1D, Flatten, Dense, Dropout, BatchNormalization, LSTM, Bidirectional, Concatenate
 import keras.backend as K
 
+''' For the baseline 2D architecture, original code can be found at https://github.com/sharathadavanne/sed-crnn/blob/master/sed.py
+Inspiration and concept of the raw audio frontend from:
+Ramírez, M. M., Benetos, E., & Reiss, J. D. (2020). Deep learning for black-box modeling of audio effects. Applied Sciences, 10(2), 638.
+'''
+
 class LogMelLayer(tf.keras.layers.Layer):
     def __init__(self, fft_length, window_length, hop_length, nmels, sr, **kwargs):
         super(LogMelLayer, self).__init__(**kwargs)
