@@ -24,7 +24,7 @@ The following arguments are used:
 `--frame_size 256` gives the analysis frame size in samples, 64 or 256.   
 `--model_type 0` decides the type of model architecture to train. 0 = RAW2D, 1 = LOG2D, 2 = RAW1D, 3 = LOG1D, and 4 = PURE1D (which only works on analysis frame size of 256). 
 
-###Example
+### Example
 To train a RAW2D from scratch on analysis frame size of 256 for 100 epochs: 
 `python Train.py --batchsize 10 --epochs 100 --model_name testRAW2D --frame_size 256  --model_type 0`
 
