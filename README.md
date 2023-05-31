@@ -8,7 +8,7 @@ In this repo all the models trained for the thesis can be downloaded, as well as
 All the models trained and described in the thesis can be downloaded from this [Dropbox link](https://www.dropbox.com/scl/fo/omimk5k680nqo62b5l24p/h?dl=0&rlkey=t3amz8fmstdxtboji83l2je90). 
 
 ## Training dataset
-The training dataset can be downloaded from this [Dropbox link](https://www.dropbox.com/sh/3jsvlptg971zjf1/AADiSkKnJweOYZyYBS_njgMRa?dl=0). Download all the files in the folder. The dataset has been split into four training sets and four validation sets, which are used in the training loop to avoid filling up the GPU memory. The datasets are saved as .npz files. Keep them in the same folder as the Train.py file. 
+The training dataset can be downloaded from this [Dropbox link](https://www.dropbox.com/scl/fo/px2pohl0vzek7qn66hqwc/h?dl=0&rlkey=4lm91avcc4n4lqvw01jwczuui). Download all the files in the folder. The dataset has been split into four training sets and four validation sets, which are used in the training loop to avoid filling up the GPU memory. The datasets are saved as .npz files. Keep them in the same folder as the Train.py file. 
 
 Training dataset can also be downloaded and constructed from the [DESED 2019 task 4 repo](https://github.com/turpaultn/DESED), follow the instructions on that page. However to use the training script in this repo, download the dataset from the Dropbox link.  
 
