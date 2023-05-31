@@ -98,7 +98,7 @@ def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     x = Input(shape=(win_length, 1), name='input')
 
     
-    
+    # LAR Block
     conv = Conv1D(filters, kernel_size_1, strides=1, padding='same', use_bias=False, trainable = True,
                     input_shape=(win_length, 1), name='conv1')
     
@@ -136,7 +136,7 @@ def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     L = max_pooling(L)
     L = L[...,tf.newaxis]
     
-    
+    # CNN Block
     spec_x = L
     for _i, _cnt in enumerate(_cnn_pool_size):
         spec_x = Conv2D(filters=_cnn_nb_filt, kernel_size=(3, 3), padding='same', name='Cnv2D'+str(_i))(spec_x)
@@ -149,18 +149,20 @@ def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     spec_x = Reshape((win_length//F_size, -1))(spec_x)
     
     num = 1
-
+    
+    # RNN Block
     for _r in _rnn_nb:
         
         spec_x = Bidirectional(
             GRU(_r, activation='tanh', dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True),
             merge_mode='mul', name='BiLSTM'+str(num))(spec_x)
         num += 1
-
+    
+    # Dense Block
     for _f in _fc_nb:
         spec_x = TimeDistributed(Dense(_f))(spec_x)
         spec_x = Dropout(dropout_rate)(spec_x)
-
+    
     spec_x = TimeDistributed(Dense(n_classes))(spec_x)
     out = Activation('sigmoid', name='strong_out')(spec_x)
 
