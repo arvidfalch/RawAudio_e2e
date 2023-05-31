@@ -12,6 +12,7 @@ class LogMelLayer(tf.keras.layers.Layer):
         self.nmels = nmels
         self.sr = sr
         
+        
     def call(self, inputs):
         x = tf.squeeze(inputs, axis=-1)
         stft = tf.abs(tf.signal.stft(x, frame_length=self.window_length, frame_step=self.hop_length, fft_length=self.fft_length, pad_end=True))
@@ -323,7 +324,7 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
         batchsize_, win_length, dropout_rate=0.5, F_size=64, sr=24000):
     # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
     concatenate2 = Concatenate(axis=-2)
-    x = Input(shape=(batchsize_, win_length, 1), name='input')
+    x = Input(shape=(win_length, 1), name='input')
 
     conv = Conv1D(128, 64, strides=1, padding='same', use_bias=False, trainable = True,
                     input_shape=(win_length, 1))
@@ -350,32 +351,35 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     
     # Learnable filters
     
-    X = TimeDistributed(conv, name='conv')(x)
-    X = TimeDistributed(batch_norm_1, name='conv_batch_norm')(X)
-    B = TimeDistributed(activation_abs, name='conv_activation')(X)
-    M = TimeDistributed(depth_conv, name='depth_conv')(B)
-    M = TimeDistributed(batch_norm_2, name='conv_smoothing_batch_norm')(M)
-    M = TimeDistributed(activation_sp, name='conv_smoothing_activation')(M)
+    # Learnable filters
+    
+    X = conv(x)
+    X = batch_norm_1(X)
+    B = activation_abs(X)
+    M = depth_conv(B)
+    M = batch_norm_2(M)
+    M = activation_sp(M)
     
     # Concatenate Skip connection
 
-    L = TimeDistributed(concatenate, name='concatenate')([B, M])
-    L = TimeDistributed(avg_pooling_freq, name='avg_pooling_freq')(L)
-    L = TimeDistributed(max_pooling, name='max_pooling_1')(L)
+    L = concatenate([B, M])
+    L = avg_pooling_freq(L)
+    L = max_pooling(L)
+    
     
     spec_x = L
     for _i, _cnt in enumerate(_cnn_pool_size):
-        spec_x = TimeDistributed(Conv1D(filters=512, kernel_size=3, padding='same'), name='Cnv1D'+str(_i))(spec_x)
-        spec_x = TimeDistributed(BatchNormalization(), name='BatchN'+str(_i))(spec_x)
-        spec_x = TimeDistributed(Activation('relu'), name='Relu'+str(_i))(spec_x)
-        spec_x = TimeDistributed(MaxPooling1D(pool_size=4, data_format='channels_first'), name='MaxPool'+str(_i))(spec_x)
-        spec_x = TimeDistributed(Dropout(dropout_rate), name='Dropout'+str(_i))(spec_x)
+        spec_x = Conv1D(filters=512, kernel_size=3, padding='same', name='Cnv1D'+str(_i))(spec_x)
+        spec_x = BatchNormalization(name='BatchN'+str(_i))(spec_x)
+        spec_x = Activation('relu', name='Relu'+str(_i))(spec_x)
+        spec_x = MaxPooling1D(pool_size=4, data_format='channels_first', name='MaxPool'+str(_i))(spec_x)
+        spec_x = Dropout(dropout_rate, name='Dropout'+str(_i))(spec_x)
     
     
     num = 1
 
-    t = Lambda(lambda inputs: tf.unstack(inputs, num=batchsize_, axis=1, name='unstack2'))(spec_x)
-    spec_x = concatenate2(t)
+    
+    spec_x = Reshape((win_length//F_size, -1))(spec_x)
 
 
     for _r in _rnn_nb:
@@ -400,27 +404,24 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
 def LOG1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
         batchsize_, win_length, dropout_rate=0.5, F_size=64, sr=24000):
     # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
-    concatenate2 = Concatenate(axis=-2)
-    x = Input(shape=(batchsize_, win_length, 1), name='input')
-
-    L = TimeDistributed(LogMelLayer(fft_length=2048, window_length=1026, hop_length=F_size, nmels=128, sr=24000, flip=False))(x)
-
-    concatenate2 = Concatenate(axis=-2)
     
-    
+    x = Input(shape=(win_length, 1), name='input')
+
+    L = LogMelLayer(fft_length=2048, window_length=1026, hop_length=F_size, nmels=128, sr=24000)(x)
+    L = tf.squeeze(L, axis=-1)
     spec_x = L
     for _i, _cnt in enumerate(_cnn_pool_size):
-        spec_x = TimeDistributed(Conv1D(filters=512, kernel_size=3, padding='same'), name='Cnv1D'+str(_i))(spec_x)
-        spec_x = TimeDistributed(BatchNormalization(), name='BatchN'+str(_i))(spec_x)
-        spec_x = TimeDistributed(Activation('relu'), name='Relu'+str(_i))(spec_x)
-        spec_x = TimeDistributed(MaxPooling1D(pool_size=4, data_format='channels_first'), name='MaxPool'+str(_i))(spec_x)
-        spec_x = TimeDistributed(Dropout(dropout_rate), name='Dropout'+str(_i))(spec_x)
+        spec_x = Conv1D(filters=512, kernel_size=3, padding='same', name='Cnv1D'+str(_i))(spec_x)
+        spec_x = BatchNormalization(name='BatchN'+str(_i))(spec_x)
+        spec_x = Activation('relu', name='Relu'+str(_i))(spec_x)
+        spec_x = MaxPooling1D(pool_size=4, data_format='channels_first', name='MaxPool'+str(_i))(spec_x)
+        spec_x = Dropout(dropout_rate, name='Dropout'+str(_i))(spec_x)
     
     
     num = 1
 
-    t = Lambda(lambda inputs: tf.unstack(inputs, num=batchsize_, axis=1, name='unstack2'))(spec_x)
-    spec_x = concatenate2(t)
+    #spec_x = Permute((2, 1, 3))(spec_x)
+    spec_x = Reshape((win_length//F_size, -1))(spec_x)
 
 
     for _r in _rnn_nb:
