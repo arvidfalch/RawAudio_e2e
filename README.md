@@ -11,7 +11,7 @@ The training dataset can be downloaded from this [Dropbox link](https://www.drop
 Training dataset can also be downloaded and constructed from DESED link, follwo the instructions on that page. 
 
 ## Evaluation dataset
-The evaluation dataset can be downloaded from this [Dropbox link](https://www.dropbox.com/scl/fo/yms4wsqj97mgwnv2wkdr3/h?dl=0&rlkey=698xzssz2rcuqe8w0wozc05kf). 
+The evaluation dataset can be downloaded from this [Dropbox link](https://www.dropbox.com/scl/fo/yms4wsqj97mgwnv2wkdr3/h?dl=0&rlkey=698xzssz2rcuqe8w0wozc05kf). Keep in the same folder as the evaluation scripts.  
 
 ## Training
 
