@@ -46,8 +46,8 @@ class LogMelLayer(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
     
 def LOG2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+        win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
     
@@ -92,8 +92,8 @@ def LOG2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     return _model
 
 def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+        win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
 
@@ -176,7 +176,7 @@ def RAW2D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
 
 def PURE1D(n_classes, _rnn_nb, _fc_nb, 
         win_length, dropout_rate=0.25, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
 
@@ -250,8 +250,8 @@ def PURE1D(n_classes, _rnn_nb, _fc_nb,
     return _model
 
 def RAW2D_3_channels(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+        win_length, filters, kernel_size_1, dropout_rate=0.5, F_size=256, sr=24000):
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
 
@@ -328,8 +328,8 @@ def RAW2D_3_channels(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     return _model
 
 def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, dropout_rate=0.5, F_size=64, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+        win_length, dropout_rate=0.5, F_size=64, sr=24000):
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
 
@@ -403,8 +403,8 @@ def RAW1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb,
     return _model
 
 def LOG1D(n_classes, _cnn_nb_filt, _cnn_pool_size, _rnn_nb, _fc_nb, 
-        batchsize_, win_length, dropout_rate=0.5, F_size=64, sr=24000):
-    # 10, 128, [5, 2, 2], [64, 64], [32], 10, 4096, sr=sr)
+        win_length, dropout_rate=0.5, F_size=64, sr=24000):
+    # 10, 128, [5, 2, 2], [64, 64], [32], 40960, sr=sr)
     
     x = Input(shape=(win_length, 1), name='input')
 
